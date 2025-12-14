@@ -1,48 +1,60 @@
 @echo off
-chcp 65001 >nul
-setlocal enabledelayedexpansion
-title Qpass打包脚本 ...
-color 0A
-
-echo ========================================================
-echo        Qpass打包脚本
-echo ========================================================
+title Qflow Build Script
+echo Qflow Build Script
+echo ================
 echo.
 
-REM --- 1. 检测与创建环境 ---
-if exist venv goto :ACTIVATE_VENV
-
-echo [1/5] 创建虚拟环境...
-python -m venv venv
+REM Check Python installation
+echo [1] Checking Python...
+python --version
 if %errorlevel% neq 0 (
-    echo [错误] 创建失败，请检查 Python 是否安装。
+    echo Error: Python not found!
     pause
     exit /b
 )
 
-:ACTIVATE_VENV
-echo [2/5] 激活环境...
-call venv\Scripts\activate.bat
+echo.
 
-REM --- 2. 安装依赖 (使用 requirements.txt) ---
-echo [3/5] 安装/补全依赖...
-pip install -r requirements.txt
-if %errorlevel% neq 0 (
-    echo [警告] 依赖安装出错，请检查网络或 requirements.txt 文件。
-    pause
+REM Create virtual environment if not exist
+if exist venv (
+    echo [2] Virtual environment already exists
+) else (
+    echo [2] Creating virtual environment...
+    python -m venv venv
+    if %errorlevel% neq 0 (
+        echo Error: Failed to create virtual environment!
+        pause
+        exit /b
+    )
 )
 
-REM --- 3. 清理 ---
-echo [4/5] 清理旧文件...
+echo.
+
+REM Activate virtual environment
+echo [3] Activating virtual environment...
+call venv\Scripts\activate.bat
+
+echo.
+
+REM Install dependencies
+echo [4] Installing dependencies...
+pip install --upgrade pip
+pip install pyinstaller
+pip install -r requirements.txt
+
+echo.
+
+REM Clean old files
+echo [5] Cleaning old files...
 if exist build rmdir /s /q build
 if exist dist rmdir /s /q dist
 if exist *.spec del /q *.spec
 
-REM --- 4. 打包 ---
-echo [5/5] 正在打包 (开启控制台以便调试)...
-set "APP_NAME=Qpass"
+echo.
 
-pyinstaller --console --onefile --clean --name "%APP_NAME%" ^
+REM Build application
+echo [6] Building application...
+pyinstaller --windowed --onefile --clean --name Qflow ^
     --hidden-import pynput.keyboard._win32 ^
     --hidden-import pynput.mouse._win32 ^
     --hidden-import comtypes ^
@@ -58,22 +70,16 @@ pyinstaller --console --onefile --clean --name "%APP_NAME%" ^
     --exclude-module unittest ^
     main.py
 
-if %errorlevel% neq 0 (
-    color 0C
-    echo.
-    echo [失败] 打包出错！
-    pause
-    exit /b
-)
+echo.
 
-echo.
-echo ========================================================
-echo [成功] 打包完成！
-echo.
-echo 程序位置: dist\%APP_NAME%.exe
-echo.
-echo 请务必将 exe 放在一个新的文件夹中运行，
-echo 因为它需要生成 projects 文件夹。
-echo ========================================================
+if %errorlevel% equ 0 (
+    echo Build completed successfully!
+    echo Executable: dist\Qflow.exe
+    echo.
+    echo Press any key to exit...
+) else (
+    echo Build failed!
+    echo.
+    echo Press any key to exit...
+)
 pause
-start dist
