@@ -446,7 +446,6 @@ class AutomationCore:
         if ntype == 'image':
             conf, timeout = safe_float(data.get('confidence', 0.9)), max(0.5, safe_float(data.get('timeout', 10.0)))
             
-            # 默认全屏搜索，除非有锚点指定了动态区域
             search_region = None
             if (anchors := data.get('anchors', [])):
                 primary_res = None
@@ -464,7 +463,6 @@ class AutomationCore:
                 if self.stop_event.is_set(): return '__STOP__'
                 self._check_pause()
                 
-                # 传入匹配策略
                 res = VisionEngine.locate(data.get('image'), confidence=conf, timeout=0, stop_event=self.stop_event, region=search_region, strategy=data.get('match_strategy','hybrid'))
                 if res:
                     with self.io_lock:
@@ -475,7 +473,6 @@ class AutomationCore:
                             getattr(pyautogui, {'click':'click','double_click':'doubleClick','right_click':'rightClick'}.get(act, 'click'))()
                     return 'found'
                 
-                # [修复] 增强自动滚动逻辑
                 if bool(data.get('auto_scroll', False)):
                      scroll_amount = safe_int(data.get('scroll_amount', -500))
                      self.log(f"📜 未找到目标，自动滚动: {scroll_amount}", "exec")
@@ -662,7 +659,6 @@ class GraphNode:
             btn_style = {'bg': '#404040', 'fg': '#eeeeee', 'bd': 0, 'activebackground': '#505050', 'font': FONTS['small']}
             tk.Button(tool_frame, text="📸 截取", command=cmd_snip, **btn_style).pack(side='left', fill='x', expand=True, padx=(0, 1), pady=0)
             tk.Button(tool_frame, text="⚡ 测试", command=cmd_test, **btn_style).pack(side='left', fill='x', expand=True, padx=(1, 0), pady=0)
-            # 修复：给 toolbar 窗口添加 tags，以便拖动时能被 canvas.move 移动
             self.widgets.append(self.canvas.create_window(vx + vw/2, toolbar_y, window=tool_frame, width=vw-8*z, height=24*z, anchor='n', tags=self.tags))
             
             img_start_y = toolbar_y + 28*z
@@ -715,7 +711,6 @@ class GraphNode:
             e.pack(side='left', padx=5)
             e.bind("<FocusOut>", lambda ev: self.update_data(key, e.get())) 
             e.bind("<Return>", lambda ev: [self.update_data(key, e.get()), self.canvas.focus_set()])
-            # 修复：给 entry 窗口添加 tags
             self.widgets.append(self.canvas.create_window(vx + 10*z, y_cursor, window=frame, anchor='nw', tags=self.tags))
 
         def create_combo(key, options_map, default, width=8):
@@ -739,7 +734,6 @@ class GraphNode:
                 self.update_data(key, final_val)
                 
             cb.bind("<<ComboboxSelected>>", on_sel)
-            # 修复：给 combo 窗口添加 tags
             self.widgets.append(self.canvas.create_window(vx + 10*z, y_cursor, window=cb, anchor='nw', tags=self.tags))
             
         if self.type == 'wait': create_entry('seconds', '1.0', '等待(s):')
@@ -753,7 +747,6 @@ class GraphNode:
             tk.Label(f, text="=", bg=COLORS['bg_node'], fg='white').pack(side='left')
             e2 = tk.Entry(f, bg=COLORS['input_bg'], fg='white', bd=0, width=5, font=FONTS['code']); e2.insert(0, self.data.get('var_value','')); e2.pack(side='left')
             e2.bind("<FocusOut>", lambda e: self.update_data('var_value', e2.get()))
-            # 修复：给 var 窗口添加 tags
             self.widgets.append(self.canvas.create_window(vx + 10*z, y_cursor, window=f, anchor='nw', tags=self.tags))
         
         elif self.type == 'mouse': create_combo('mouse_action', MOUSE_ACTIONS, 'click', width=12)
@@ -787,9 +780,7 @@ class GraphNode:
     def set_selected(self,selected): self.canvas.itemconfig(self.sel_rect,state='normal' if selected else 'hidden'); (selected and self.canvas.tag_lower(self.sel_rect, self.body_item))
     def contains(self,log_x,log_y): return self.x<=log_x<=self.x+self.w and self.y<=log_y<=self.y+self.h
     
-    # 增加 update_position 方法用于平滑拖动
     def update_position(self, dx, dy):
-        # 移动所有带有当前节点标签的画布元素（包括背景、文本、端口、以及已打标签的窗口组件）
         self.canvas.move(self.tags[0], dx, dy)
 
 class FlowEditor(tk.Canvas):
@@ -865,7 +856,6 @@ class FlowEditor(tk.Canvas):
             if not (event.state & 0x0004): 
                 if clicked_node.id not in self.selected_node_ids: self.select_node(clicked_node.id)
             else: self.select_node(clicked_node.id, add=True)
-            # 记录视觉坐标用于计算增量
             self.drag_data = {
                 "type": "node", 
                 "last_vx": vx, 
@@ -890,10 +880,8 @@ class FlowEditor(tk.Canvas):
             for nid in self.selected_node_ids:
                 if nid in self.nodes:
                     node = self.nodes[nid]
-                    # 更新逻辑坐标
                     node.x += dx / self.zoom
                     node.y += dy / self.zoom
-                    # 移动画布上的所有元素（包括组件）
                     node.update_position(dx, dy)
             self.redraw_links()
             
@@ -910,7 +898,6 @@ class FlowEditor(tk.Canvas):
         
         if self.drag_data.get("type")=="node":
             if self.drag_data.get("dragged", False):
-                # 拖动结束时进行吸附修正
                 for nid in self.selected_node_ids:
                     if nid in self.nodes:
                         self.nodes[nid].set_pos(round(self.nodes[nid].x/GRID_SIZE)*GRID_SIZE, round(self.nodes[nid].y/GRID_SIZE)*GRID_SIZE)
@@ -993,7 +980,6 @@ class FlowEditor(tk.Canvas):
             if len(self.selected_node_ids) > 1:
                 m.add_command(label="⬅ 左对齐", command=lambda: self.align_nodes('left'))
                 m.add_command(label="⬆ 顶对齐", command=lambda: self.align_nodes('top'))
-            # 已移除添加路由点功能
         
         m.post(event.x_root,event.y_root)
 
@@ -1106,7 +1092,6 @@ class PropertyPanel(tk.Frame):
             txt = tk.Text(sec, height=5, bg=COLORS['input_bg'], fg='white', bd=0, font=FONTS['code'])
             txt.pack(fill='x', pady=(2,5))
             
-            # 回填现有变量
             existing = ""
             for item in data.get('batch_vars', []): existing += f"{item.get('name')}={item.get('value')}\n"
             if not existing and data.get('var_name'): existing = f"{data.get('var_name')}={data.get('var_value')}"
@@ -1212,7 +1197,6 @@ class PropertyPanel(tk.Frame):
                     tk.Label(row, text=f"锚点 {i+1}", bg=COLORS['bg_card'], fg=COLORS['success'], width=8, anchor='w').pack(side='left', padx=5)
                     self._btn_icon(row, "🗑️", lambda idx=i: self._delete_anchor(idx), color=COLORS['danger'])
 
-            # 移除了搜索范围选择，默认使用全屏
             search_sec = self._create_section("搜索参数")
             self._combo(search_sec, "匹配策略",'match_strategy',list(MATCH_STRATEGY_MAP.values()),MATCH_STRATEGY_MAP.get(data.get('match_strategy','hybrid')),lambda e:self._save('match_strategy',{v: k for k, v in MATCH_STRATEGY_MAP.items()}.get(e.widget.get())))
             self._input(search_sec, "相似度",'confidence',data.get('confidence',0.9), safe_float)
@@ -1367,11 +1351,9 @@ class PropertyPanel(tk.Frame):
             
             cx, cy = res.left+res.width/2, res.top+res.height/2
             
-            # 画中心十字
             cv.create_line(cx-10, cy, cx+10, cy, fill='red', width=2)
             cv.create_line(cx, cy-10, cx, cy+10, fill='red', width=2)
             
-            # 动态反馈元素
             line_id = cv.create_line(cx, cy, cx, cy, fill='blue', dash=(4, 4), width=1)
             text_id = cv.create_text(cx, cy, text="Offset: 0, 0", fill='blue', anchor='sw', font=('Consolas', 10, 'bold'))
             
@@ -1382,7 +1364,6 @@ class PropertyPanel(tk.Frame):
 
             def confirm(e): 
                 self._save('offset_x', int(e.x-cx)); self._save('offset_y', int(e.y-cy))
-                # 画一个确认点
                 cv.create_oval(e.x-3, e.y-3, e.x+3, e.y+3, fill='red', outline='white')
                 top.update()
                 time.sleep(0.2)
@@ -1478,14 +1459,11 @@ class SettingsDialog(tk.Toplevel):
         self.title("设置"); self.geometry("400x300"); self.config(bg=COLORS['bg_panel'])
         self.resizable(False, False); self.transient(parent); self.grab_set()
         
-        # [新增] 停止全局快捷键，防止设置时误触发
         self.app.stop_hotkeys()
         self.protocol("WM_DELETE_WINDOW", self.on_cancel)
         
-        # 居中
         self.geometry("+%d+%d" % (parent.winfo_rootx()+50, parent.winfo_rooty()+50))
 
-        # 主题设置
         f_theme = tk.Frame(self, bg=COLORS['bg_panel'], pady=10, padx=20)
         f_theme.pack(fill='x')
         tk.Label(f_theme, text="界面主题:", bg=COLORS['bg_panel'], fg=COLORS['fg_text']).pack(side='left')
@@ -1493,7 +1471,6 @@ class SettingsDialog(tk.Toplevel):
         self.combo_theme.set(SETTINGS.get('theme', 'Dark'))
         self.combo_theme.pack(side='right', fill='x', expand=True, padx=10)
 
-        # 快捷键设置
         f_hk = tk.Frame(self, bg=COLORS['bg_panel'], pady=10, padx=20)
         f_hk.pack(fill='x')
         
@@ -1507,7 +1484,6 @@ class SettingsDialog(tk.Toplevel):
 
         f_hk.columnconfigure(1, weight=1)
 
-        # 按钮
         btn_frame = tk.Frame(self, bg=COLORS['bg_panel'], pady=20)
         btn_frame.pack(side='bottom', fill='x')
         tk.Button(btn_frame, text="保存并重启UI", command=self.save, bg=COLORS['accent'], fg='white', bd=0, padx=20).pack(side='right', padx=20)
@@ -1550,7 +1526,6 @@ class SettingsDialog(tk.Toplevel):
         return "break" 
     
     def on_cancel(self):
-        # 取消时恢复原有快捷键
         self.app.refresh_hotkeys()
         self.destroy()
 
@@ -1569,7 +1544,7 @@ class SettingsDialog(tk.Toplevel):
 # --- 8. 主程序 ---
 class App(tk.Tk):
     def __init__(self):
-        super().__init__(); self.title("Qflow 1.5"); self.geometry("1400x900")
+        super().__init__(); self.title("Qflow 1.5 —— QwejayHuang"); self.geometry("1400x900")
         self.core = AutomationCore(self.log, self); self.log_q = queue.Queue()
         self.drag_node_type, self.drag_ghost = None, None
         self.hotkey_listener = None
@@ -1600,7 +1575,7 @@ class App(tk.Tk):
         
         toolbox=tk.Frame(paned,bg=COLORS['bg_sidebar']); self._build_toolbox(toolbox); paned.add(toolbox,minsize=160)
         self.editor=FlowEditor(paned,self); paned.add(self.editor,minsize=400,stretch="always")
-        # [# 修改属性面板宽度在这里]
+        # [# 修改属性面板宽度]
         self.property_panel=PropertyPanel(paned,self); paned.add(self.property_panel,minsize=250)
         
         self.log_panel=LogPanel(self)
@@ -1637,7 +1612,6 @@ class App(tk.Tk):
             self.core.stop()
 
     def _build_toolbox(self, p):
-        # [修改] 移除了 'note'
         tool_groups = [
             ("逻辑组件", ['start', 'end', 'loop', 'sequence', 'set_var', 'var_switch']),
             ("动作执行", ['mouse', 'keyboard', 'cmd', 'web', 'wait']),
@@ -1665,23 +1639,18 @@ class App(tk.Tk):
     # --- 截图功能 ---
 
     def do_snip(self):
-        # 使用 iconify (最小化) 而不是 withdraw，更能触发系统重绘背景
         self.iconify()
         self.update() 
-        # 延时 400ms 确保窗口动画完成
         self.after(400, lambda: self._start_snip_overlay())
 
     def _start_snip_overlay(self):
-        # 创建一个全屏、半透明、置顶的窗口作为遮罩
         top = tk.Toplevel(self)
         top.attributes("-fullscreen", True, "-alpha", 0.3, "-topmost", True)
         top.configure(cursor="cross", bg="black")
         
-        # 使用 Canvas 绘制选框
         c = tk.Canvas(top, bg="black", highlightthickness=0)
         c.pack(fill='both', expand=True)
 
-        # 提示信息
         info_lbl = tk.Label(top, text="请框选区域 (ESC取消)", font=('Segoe UI', 16, 'bold'), fg='white', bg='black')
         info_lbl.place(x=50, y=50)
 
@@ -1696,10 +1665,8 @@ class App(tk.Tk):
             if r[0]: c.coords(r[0], s[0], s[1], e.x, e.y)
 
         def up(e): 
-            # 计算最终坐标
             x1, y1, x2, y2 = min(s[0], e.x), min(s[1], e.y), max(s[0], e.x), max(s[1], e.y)
             top.destroy()
-            # 遮罩销毁后，延时一小段时间再进行真正的截图，确保遮罩已完全消失
             self.after(200, lambda: self._capture((x1, y1, x2, y2)))
 
         def cancel(e):
@@ -1714,21 +1681,16 @@ class App(tk.Tk):
 
     def _capture(self, rect):
         x1, y1, x2, y2 = rect
-        # 校验选区大小，防止误触
         if x2 - x1 < 5 or y2 - y1 < 5: 
             self.deiconify()
             return
             
         try:
-            # 真正的截图动作发生在这里
             img = ImageGrab.grab(bbox=(x1, y1, x2, y2))
             
-            # 截图完成后恢复主窗口
             self.deiconify()
             
-            # 更新节点数据逻辑 (保持 main.py 原有逻辑)
             if (n := self.property_panel.current_node): 
-                # 记录时间戳用于撤销栈
                 n.update_data('_dummy_for_history', time.time())
                 
                 if n.type == 'if_img': 
@@ -1738,13 +1700,12 @@ class App(tk.Tk):
                         'tk_image': ImageUtils.make_thumb(img), 
                         'b64': ImageUtils.img_to_b64(img)
                     })
-                    # 触发属性面板刷新
                     self.property_panel.load_node(n)
                     
                 elif n.type == 'if_static': 
                     n.update_data('roi', (x1, y1, x2-x1, y2-y1))
                     n.data['roi_preview'] = ImageUtils.make_thumb(img)
-                    n.data['b64_preview'] = ImageUtils.img_to_b64(img) # 确保保存预览图数据
+                    n.data['b64_preview'] = ImageUtils.img_to_b64(img)
                     n.draw()
                     self.property_panel.load_node(n)
                     
@@ -1767,7 +1728,6 @@ class App(tk.Tk):
         def clk(e): top.destroy(); self.deiconify(); (self.property_panel.current_node and (self.property_panel.current_node.update_data('x',e.x_root) or self.property_panel.current_node.update_data('y',e.y_root) or self.property_panel.load_node(self.property_panel.current_node)))
         c.bind("<Button-1>",clk)
 
-    # [修改] UI状态逻辑优化 (确保UI更新)
     def toggle_run(self, start_id): 
         if self.core.running: 
             self.core.stop()
