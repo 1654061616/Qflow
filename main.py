@@ -581,7 +581,10 @@ class AutomationCore:
         self.active_threads = 0; self.thread_lock = threading.Lock(); self.scaling_ratio = 1.0; self.breakpoints = set()
         self.max_threads = 50 
         self.context = {'window_rect': None, 'window_handle': 0, 'window_offset': (0, 0)}
+<<<<<<< HEAD
         self.performance_stats = {'nodes_executed': 0, 'errors': 0, 'start_time': None}
+=======
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
 
     def load_project(self, project_data):
         self.project = project_data; self.scaling_ratio = 1.0; self.breakpoints = set(project_data.get('breakpoints', []))
@@ -606,7 +609,10 @@ class AutomationCore:
         self.running = True; self.paused = False; self.stop_event.clear(); self.pause_event.set()
         self.runtime_memory = {}; self.active_threads = 0
         self.context = {'window_rect': None, 'window_handle': 0, 'window_offset': (0, 0)}
+<<<<<<< HEAD
         self.performance_stats = {'nodes_executed': 0, 'errors': 0, 'start_time': time.time()}
+=======
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
         self.log("🚀 引擎启动", "exec"); self.app.iconify()
         threading.Thread(target=self._run_flow_engine, args=(start_node_id,), daemon=True).start()
 
@@ -648,11 +654,15 @@ class AutomationCore:
                 time.sleep(0.5)
         except Exception as e: traceback.print_exc(); self.log(f"引擎异常: {str(e)}", "error")
         finally:
+<<<<<<< HEAD
             self.running = False
             if self.performance_stats['start_time']:
                 elapsed = time.time() - self.performance_stats['start_time']
                 self.log(f"📊 执行统计: {self.performance_stats['nodes_executed']}个节点, {self.performance_stats['errors']}个错误, 耗时{elapsed:.2f}秒", "info")
             self.log("🏁 流程结束", "info"); 
+=======
+            self.running = False; self.log("🏁 流程结束", "info"); 
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             self.app.highlight_node_safe(None); 
             self.app.after(0, self.app.deiconify); 
             self.app.after(100, self.app.reset_ui_state)
@@ -671,6 +681,7 @@ class AutomationCore:
             self._check_pause(node_id)
             if self.stop_event.is_set(): return
             self.app.highlight_node_safe(node_id, 'running'); self.app.select_node_safe(node_id)
+<<<<<<< HEAD
             try: 
                 out_port = self._execute_node(node)
                 self.performance_stats['nodes_executed'] += 1
@@ -679,6 +690,10 @@ class AutomationCore:
                 traceback.print_exc(); 
                 self.performance_stats['errors'] += 1
                 out_port = 'fail'
+=======
+            try: out_port = self._execute_node(node)
+            except Exception as e: self.log(f"💥 节点[{node_id}]错误: {e}", "error"); traceback.print_exc(); out_port = 'fail'
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             if out_port == '__STOP__' or self.stop_event.is_set(): return
             
             if node['type'] != 'reroute':
@@ -701,6 +716,7 @@ class AutomationCore:
     
     def _update_context_rect(self):
         if self.context['window_handle']:
+<<<<<<< HEAD
             try:
                 if not user32.IsWindow(self.context['window_handle']):
                     self.log("⚠️ 绑定窗口已关闭，重置窗口上下文", "warning")
@@ -713,6 +729,13 @@ class AutomationCore:
                 else:
                     self.context = {'window_rect': None, 'window_handle': 0, 'window_offset': (0, 0)}
             except Exception as e:
+=======
+            rect = WindowEngine.get_window_rect(self.context['window_handle'])
+            if rect:
+                self.context['window_rect'] = rect
+                self.context['window_offset'] = (rect.left, rect.top)
+            else:
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
                 self.context = {'window_rect': None, 'window_handle': 0, 'window_offset': (0, 0)}
 
     def _execute_node(self, node):
@@ -720,10 +743,14 @@ class AutomationCore:
         ntype = node['type']
         data = {k: (self._replace_variables(v) if isinstance(v, str) and '${' in v else v) for k, v in node.get('data', {}).items()}
         
+<<<<<<< HEAD
         # 窗口上下文维护
         if self.context['window_handle']: 
             self._update_context_rect()
         
+=======
+        if self.context['window_handle']: self._update_context_rect()
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
         win_offset_x, win_offset_y = self.context['window_offset']
         win_region = self.context['window_rect'] 
 
@@ -763,18 +790,32 @@ class AutomationCore:
             target_exe = exe_name if use_exe else None
             target_class = class_name if use_class else None
             target_title = title if use_title else None
+<<<<<<< HEAD
             if not target_exe and not target_class and not target_title: 
                 target_title = title
+=======
+            if not target_exe and not target_class and not target_title: target_title = title
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
 
             hwnd = WindowEngine.smart_find_window(target_exe, target_class, target_title)
             
             if hwnd:
+<<<<<<< HEAD
                 focus_success = WindowEngine.focus_window(hwnd)
                 rect = WindowEngine.get_window_rect(hwnd)
                 self.context['window_handle'] = hwnd
                 self.context['window_rect'] = rect
                 self.context['window_offset'] = (rect.left, rect.top) if rect else (0, 0)
                 log_msg = f"⚓ 已绑定: {exe_name or title or '窗口'}"
+=======
+                WindowEngine.focus_window(hwnd)
+                rect = WindowEngine.get_window_rect(hwnd)
+                self.context['window_handle'] = hwnd
+                self.context['window_rect'] = rect
+                self.context['window_offset'] = (rect.left, rect.top)
+                log_msg = f"⚓ 已绑定: {exe_name or '窗口'}"
+                if rect: log_msg += f" @ {rect}"
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
                 self.log(log_msg, "success")
                 return 'success'
             else:
@@ -831,6 +872,7 @@ class AutomationCore:
             timeout = safe_float(data.get('timeout', 20.0))
             threshold = safe_float(data.get('threshold', 0.98))
             
+<<<<<<< HEAD
             if self.context['window_handle'] and self.context['window_rect']:
                 # 相对坐标转绝对：左上角 (x+offset, y+offset)
                 abs_x = roi[0] + win_offset_x
@@ -838,6 +880,21 @@ class AutomationCore:
             else:
                 abs_x = roi[0]
                 abs_y = roi[1]
+=======
+            # 如果绑定了窗口，且 ROI 是基于窗口的（这里假设 ROI 是屏幕截图时的绝对坐标）
+            # 在实际使用中，如果窗口移动了，基于绝对坐标的 ROI 会失效。
+            # 为了支持窗口绑定后的静止检测，理想情况是 ROI 是相对窗口的。
+            # 这里简单起见，使用截取时的绝对坐标，或者如果使用了全窗口截图则使用 win_region
+            
+            target_bbox = roi
+            # 简易处理：如果绑定了窗口，且 ROI 看起来像是在窗口内部（或是全窗口），则尝试偏移
+            # 但最稳妥的静止检测通常是针对特定区域。
+            # 这里直接使用 capture_screen(bbox=target_bbox)
+            
+            start_check = time.time()
+            static_start = time.time()
+            last_frame = VisionEngine.capture_screen(bbox=target_bbox)
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             
             target_bbox = (abs_x, abs_y, abs_x + roi[2], abs_y + roi[3])
 
@@ -858,8 +915,12 @@ class AutomationCore:
 
         if ntype == 'image':
             conf, timeout = safe_float(data.get('confidence', 0.9)), max(0.5, safe_float(data.get('timeout', 10.0)))
+<<<<<<< HEAD
             search_region = win_region if win_region else None
             
+=======
+            search_region = win_region 
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             if (anchors := data.get('anchors', [])):
                 primary_res = None
                 for i, anchor in enumerate(anchors):
@@ -898,6 +959,7 @@ class AutomationCore:
 
         if ntype == 'mouse':
             with self.io_lock:
+<<<<<<< HEAD
                 action = data.get('mouse_action', 'click')
                 dur = safe_float(data.get('duration', 0.5))
                 
@@ -929,6 +991,16 @@ class AutomationCore:
                         pyautogui.moveTo(target_x, target_y, duration=dur)
                     elif action == 'scroll': 
                         pyautogui.scroll(safe_int(data.get('amount', -500)))
+=======
+                action, dur = data.get('mouse_action', 'click'), safe_float(data.get('duration', 0.5))
+                raw_x, raw_y = safe_int(data.get('x',0)), safe_int(data.get('y',0))
+                target_x = (raw_x + win_offset_x) / SCALE_X
+                target_y = (raw_y + win_offset_y) / SCALE_Y
+                if action == 'click': 
+                    pyautogui.click(x=target_x, y=target_y, clicks=safe_int(data.get('click_count', 1)), button=data.get('mouse_button', 'left'), duration=dur)
+                elif action == 'move': pyautogui.moveTo(target_x, target_y, duration=dur)
+                elif action == 'scroll': pyautogui.scroll(safe_int(data.get('amount', -500)))
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             return 'out'
         
         if ntype == 'keyboard':
@@ -958,8 +1030,12 @@ class AutomationCore:
                     return 'exit'
         if ntype == 'if_img':
             if not (imgs := data.get('images', [])): return 'no'
+<<<<<<< HEAD
             capture_bbox = win_region if win_region else None
             hay = VisionEngine.capture_screen(bbox=capture_bbox)
+=======
+            hay = VisionEngine.capture_screen(bbox=win_region)
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             for img in imgs:
                 if not VisionEngine._advanced_match(img.get('image'), hay, safe_float(data.get('confidence',0.9)), self.stop_event, True, True, self.scaling_ratio, 'hybrid')[0]: return 'no'
             return 'yes'
@@ -1147,15 +1223,15 @@ class GraphNode:
         y_cursor = vy + (self.widget_offset_y * z) 
         def create_entry(key, default, label_txt, width=8):
             val = self.data.get(key, default); frame = tk.Frame(self.canvas, bg=COLORS['bg_node'])
-            tk.Label(frame, text=label_txt, bg=COLORS['bg_node'], fg=COLORS['fg_sub'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left')
-            e = tk.Entry(frame, bg=COLORS['input_bg'], fg='white', bd=0, width=width, insertbackground='white', font=('Microsoft YaHei', int(9 * SCALE_FACTOR))); e.insert(0, str(val)); e.pack(side='left', padx=5)
+            tk.Label(frame, text=label_txt, bg=COLORS['bg_node'], fg=COLORS['fg_sub'], font=FONTS['small']).pack(side='left')
+            e = tk.Entry(frame, bg=COLORS['input_bg'], fg='white', bd=0, width=width, insertbackground='white', font=FONTS['code']); e.insert(0, str(val)); e.pack(side='left', padx=5)
             e.bind("<FocusOut>", lambda ev: self.update_data(key, e.get())); e.bind("<Return>", lambda ev: [self.update_data(key, e.get()), self.canvas.focus_set()])
             self.widgets.append(self.canvas.create_window(vx + 10*z, y_cursor, window=frame, anchor='nw', tags=self.tags))
 
         def create_combo(key, options_map, default, width=8):
             if isinstance(options_map, dict): options = list(options_map.values()); curr_val = self.data.get(key, default); disp_val = options_map.get(curr_val, curr_val); map_inv = {v: k for k, v in options_map.items()}
             else: options = options_map; disp_val = self.data.get(key, default); map_inv = None
-            cb = ttk.Combobox(self.canvas, values=options, state='readonly', width=width, font=('Microsoft YaHei', int(9 * SCALE_FACTOR))); 
+            cb = ttk.Combobox(self.canvas, values=options, state='readonly', width=width, font=FONTS['code']); 
             try: cb.set(disp_val)
             except: pass
             def on_sel(ev): val = cb.get(); final_val = map_inv.get(val, val) if map_inv else val; self.update_data(key, final_val)
@@ -1345,7 +1421,7 @@ class FlowEditor(tk.Canvas):
                 if "port_in" in tags: 
                      self.history.save_state(); self.links=[l for l in self.links if not l['target']==nid]; self.redraw_links(); return
         lx, ly = self.get_logical_pos(event.x, event.y); node = next((n for n in reversed(list(self.nodes.values())) if n.contains(lx, ly)), None)
-        m=tk.Menu(self,tearoff=0,bg=COLORS['bg_card'],fg=COLORS['fg_text'],font=('Microsoft YaHei', int(8 * SCALE_FACTOR)))
+        m=tk.Menu(self,tearoff=0,bg=COLORS['bg_card'],fg=COLORS['fg_text'],font=FONTS['small'])
         if node:
             m.add_command(label="📥 复制",command=lambda: (self.history.save_state(), self.add_node(node.type, node.x+20, node.y+20, data=copy.deepcopy(node.data), save_history=False)))
             m.add_command(label="🔴 断点",command=lambda: setattr(node, 'has_breakpoint', not node.has_breakpoint) or node.draw())
@@ -1444,12 +1520,16 @@ class PropertyPanel(tk.Frame):
         self.show_empty()
     
     def clear(self): 
+<<<<<<< HEAD
         for w in self.content.winfo_children(): 
             try: w.destroy()
             except: pass
+=======
+        for w in self.content.winfo_children(): w.destroy()
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
         self.current_node = None; self.static_monitor_active = False; self.is_monitoring_audio = False
 
-    def show_empty(self): self.clear(); tk.Label(self.content, text="未选择节点", bg=COLORS['bg_panel'], fg=COLORS['fg_sub'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(pady=40)
+    def show_empty(self): self.clear(); tk.Label(self.content, text="未选择节点", bg=COLORS['bg_panel'], fg=COLORS['fg_sub'], font=FONTS['small']).pack(pady=40)
     def show_multi_select(self, count): self.clear(); tk.Label(self.content, text=f"选中 {count} 个节点", bg=COLORS['bg_panel'], fg=COLORS['accent']).pack(pady=40)
 
     def load_node(self, node):
@@ -1457,9 +1537,14 @@ class PropertyPanel(tk.Frame):
         
         if ntype != 'reroute':
             f = tk.Frame(self.content, bg=self.content.cget('bg')); f.pack(fill='x', pady=2)
+<<<<<<< HEAD
             tk.Label(f, text="节点编号", bg=self.content.cget('bg'), fg=COLORS['fg_sub'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left')
+=======
+            tk.Label(f, text="节点编号", bg=self.content.cget('bg'), fg=COLORS['fg_sub'], font=FONTS['small']).pack(side='left')
+            # Display as non-editable label
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
             node_num = data.get('node_number', 'N/A')
-            tk.Label(f, text=str(node_num), bg=COLORS['input_bg'], fg=COLORS['accent'], font=('Microsoft YaHei', int(9 * SCALE_FACTOR)), padx=5, pady=2).pack(fill='x', expand=True, pady=2, ipady=3)
+            tk.Label(f, text=str(node_num), bg=COLORS['input_bg'], fg=COLORS['accent'], font=FONTS['code'], padx=5, pady=2).pack(fill='x', expand=True, pady=2, ipady=3)
         
         if ntype != 'reroute': self._input(self.content, "节点名称", '_user_title', data.get('_user_title', node.title_text))
 
@@ -1473,8 +1558,8 @@ class PropertyPanel(tk.Frame):
              self._input(self.content, "持续时间(秒)", 'duration', data.get('duration', 2.0), safe_float)
              self._chk(self.content, "提示音", 'use_sound', data.get('use_sound', False))
         elif ntype == 'set_var':
-            sec = self._create_section("变量设置"); tk.Label(sec, text="每行 'name=value':", bg=sec.cget('bg'), fg=COLORS['fg_text'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(anchor='w')
-            txt = tk.Text(sec, height=5, bg=COLORS['input_bg'], fg='white', bd=0, font=('Microsoft YaHei', int(9 * SCALE_FACTOR))); txt.pack(fill='x', pady=(2,5))
+            sec = self._create_section("变量设置"); tk.Label(sec, text="每行 'name=value':", bg=sec.cget('bg'), fg=COLORS['fg_text'], font=FONTS['small']).pack(anchor='w')
+            txt = tk.Text(sec, height=5, bg=COLORS['input_bg'], fg='white', bd=0, font=FONTS['code']); txt.pack(fill='x', pady=(2,5))
             existing = "".join([f"{i.get('name')}={i.get('value')}\n" for i in data.get('batch_vars', [])])
             if not existing and data.get('var_name'): existing = f"{data.get('var_name')}={data.get('var_value')}"
             txt.insert('1.0', existing)
@@ -1487,14 +1572,14 @@ class PropertyPanel(tk.Frame):
             self._input(sec, "进程名 (Exe)", 'exe_name', data.get('exe_name', ''))
             self._input(sec, "类名 (Class)", 'class_name', data.get('class_name', ''))
             self._input(sec, "标题包含", 'title', data.get('title', ''))
-            tk.Label(sec, text="匹配策略:", bg=sec.cget('bg'), fg=COLORS['accent'], font=('Microsoft YaHei', int(9 * SCALE_FACTOR))).pack(anchor='w', pady=(5,0))
+            tk.Label(sec, text="匹配策略:", bg=sec.cget('bg'), fg=COLORS['accent'], font=FONTS['small']).pack(anchor='w', pady=(5,0))
             f_chk = tk.Frame(sec, bg=sec.cget('bg')); f_chk.pack(fill='x')
             self._chk(f_chk, "匹配进程", 'use_exe', data.get('use_exe', True))
             self._chk(f_chk, "匹配类名", 'use_class', data.get('use_class', True))
             self._chk(f_chk, "匹配标题", 'use_title', data.get('use_title', False))
             tk.Frame(sec, height=1, bg=COLORS['bg_header']).pack(fill='x', pady=5)
             def start_pick(): self.app.iconify(); self.app.after(200, self.open_window_picker)
-            tk.Button(sec, text="⌖ 智能拾取窗口", command=start_pick, bg=COLORS['accent'], fg='white', bd=0, font=('Microsoft YaHei', 10, 'bold'), cursor='hand2').pack(fill='x', ipady=3)
+            tk.Button(sec, text="⌖ 智能拾取窗口", command=start_pick, bg=COLORS['accent'], fg='white', bd=0, font=('Segoe UI', 10, 'bold'), cursor='hand2').pack(fill='x', ipady=3)
             
         elif ntype == 'open_app':
             sec = self._create_section("程序配置")
@@ -1505,6 +1590,7 @@ class PropertyPanel(tk.Frame):
         elif ntype == 'web': self._input(self.content, "URL", 'url', data.get('url', ''))
         elif ntype == 'mouse':
             sec = self._create_section("鼠标操作")
+<<<<<<< HEAD
             self._combo(sec, "动作", 'mouse_action', list(MOUSE_ACTIONS.values()), MOUSE_ACTIONS.get(data.get('mouse_action', 'click'), '点击'), lambda e: [self._save('mouse_action', {v:k for k,v in MOUSE_ACTIONS.items()}.get(e.widget.get()), self.current_node), self.load_node(node)])
             if data.get('mouse_action','click') in ['click', 'double_click']:
                 self._combo(sec, "按键", 'mouse_button', list(MOUSE_BUTTONS.values()), MOUSE_BUTTONS.get(data.get('mouse_button', 'left')), lambda e: self._save('mouse_button', {v:k for k,v in MOUSE_BUTTONS.items()}.get(e.widget.get()), self.current_node))
@@ -1531,6 +1617,21 @@ class PropertyPanel(tk.Frame):
                 self._chk(sec, "粘贴模式", 'use_paste', data.get('use_paste', False))
                 self._chk(sec, "按回车", 'press_enter', data.get('press_enter', False))
             else: self._input(sec, "组合键", 'key_name', data.get('key_name', '')); tk.Label(sec, text="例: ctrl+c", bg=sec.cget('bg'), fg=COLORS['fg_sub'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(anchor='w')
+=======
+            self._combo(sec, "动作", 'mouse_action', list(MOUSE_ACTIONS.values()), MOUSE_ACTIONS.get(data.get('mouse_action', 'click'), '点击'), lambda e: [self._save('mouse_action', {v:k for k,v in MOUSE_ACTIONS.items()}.get(e.widget.get())), self.load_node(node)])
+            if data.get('mouse_action','click') == 'click':
+                self._combo(sec, "按键", 'mouse_button', list(MOUSE_BUTTONS.values()), MOUSE_BUTTONS.get(data.get('mouse_button', 'left')), lambda e: self._save('mouse_button', {v:k for k,v in MOUSE_BUTTONS.items()}.get(e.widget.get())))
+                self._combo(sec, "次数", 'click_count', ['单击','双击'], '单击' if str(data.get('click_count',1))=='1' else '双击', lambda e: self._save('click_count', 1 if e.widget.get()=='单击' else 2))
+            if data.get('mouse_action') in ['click', 'move', 'drag']:
+                coord = tk.Frame(sec, bg=sec.cget('bg')); coord.pack(fill='x', pady=5)
+                self._compact_input(coord, "X", 'x', data.get('x', 0), safe_int); self._compact_input(coord, "Y", 'y', data.get('y', 0), safe_int); self._btn_icon(coord, "📍", self.app.pick_coordinate, width=3)
+        
+        elif ntype == 'keyboard':
+            sec = self._create_section("键盘操作")
+            self._combo(sec, "模式", 'kb_mode', ['输入文本', '按键组合'], '输入文本' if data.get('kb_mode','text')=='text' else '按键组合', lambda e: [self._save('kb_mode', 'text' if e.widget.get()=='输入文本' else 'key'), self.load_node(node)])
+            if data.get('kb_mode','text')=='text': self._input(sec, "文本", 'text', data.get('text', '')); self._chk(sec, "按回车", 'press_enter', data.get('press_enter', False))
+            else: self._input(sec, "组合键", 'key_name', data.get('key_name', '')); tk.Label(sec, text="例: ctrl+c", bg=sec.cget('bg'), fg=COLORS['fg_sub'], font=FONTS['small']).pack(anchor='w')
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
 
         # 视觉类
 # === 找图节点 (image) 完整配置 ===
@@ -1684,20 +1785,27 @@ class PropertyPanel(tk.Frame):
     def _input(self, parent, label, key, val, vfunc=None):
         target_node = self.current_node # 捕获当前节点
         f = tk.Frame(parent, bg=parent.cget('bg')); f.pack(fill='x', pady=2)
+<<<<<<< HEAD
         tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left', padx=(0,5))
         e = tk.Entry(f, bg=COLORS['input_bg'], fg='white', bd=0, insertbackground='white', font=('Microsoft YaHei', int(9 * SCALE_FACTOR))); e.insert(0, str(val)); e.pack(fill='x', pady=2, ipady=3, expand=True)
         # 将 target_node 传入 _save
         e.bind("<FocusOut>", lambda ev: self._save(key, vfunc(e.get()) if vfunc else e.get(), target_node))
         e.bind("<Return>", lambda ev: [self._save(key, vfunc(e.get()) if vfunc else e.get(), target_node), self.canvas.focus_set()])
         
+=======
+        tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=FONTS['small']).pack(side='left', padx=(0,5))
+        e = tk.Entry(f, bg=COLORS['input_bg'], fg='white', bd=0, insertbackground='white', font=FONTS['code']); e.insert(0, str(val)); e.pack(fill='x', pady=2, ipady=3, expand=True)
+        e.bind("<FocusOut>", lambda ev: self._save(key, vfunc(e.get()) if vfunc else e.get()))
+        e.bind("<Return>", lambda ev: [self._save(key, vfunc(e.get()) if vfunc else e.get()), self.canvas.focus_set()])
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
     def _file_picker(self, parent, label, key, val):
         target_node = self.current_node
         f = tk.Frame(parent, bg=parent.cget('bg')); f.pack(fill='x', pady=2)
-        tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left')
+        tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=FONTS['small']).pack(side='left')
         input_container = tk.Frame(f, bg=COLORS['input_bg']); input_container.pack(side='left', fill='x', expand=True, padx=2)
         display_text = os.path.basename(val) if val else "点击选择..."
         if len(display_text) > 20: display_text = display_text[:17] + "..."
-        lbl_display = tk.Label(input_container, text=f"📄 {display_text}", bg=COLORS['input_bg'], fg='white' if val else '#888', font=('Microsoft YaHei', int(9 * SCALE_FACTOR)), anchor='w'); lbl_display.pack(side='left', fill='x', expand=True, padx=5)
+        lbl_display = tk.Label(input_container, text=f"📄 {display_text}", bg=COLORS['input_bg'], fg='white' if val else '#888', font=FONTS['code'], anchor='w'); lbl_display.pack(side='left', fill='x', expand=True, padx=5)
         if val: 
             def on_enter(e): self.app.log(f"路径: {val}", "info") 
             lbl_display.bind("<Enter>", on_enter)
@@ -1707,23 +1815,34 @@ class PropertyPanel(tk.Frame):
         lbl_display.bind("<Button-1>", lambda e: pick()); input_container.bind("<Button-1>", lambda e: pick()); self._btn_icon(f, "📂", pick)
         
     def _compact_input(self, parent, label, key, val, vfunc=None):
+<<<<<<< HEAD
         target_node = self.current_node
         tk.Label(parent, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left', padx=(5,2))
+=======
+        tk.Label(parent, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=FONTS['small']).pack(side='left', padx=(5,2))
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
         e = tk.Entry(parent, bg=COLORS['input_bg'], fg='white', bd=0, width=6); e.insert(0, str(val)); e.pack(side='left', padx=2)
         e.bind("<FocusOut>", lambda ev: self._save(key, vfunc(e.get()) if vfunc else e.get(), target_node))
         
     def _combo(self, parent, label, key, values, val, cmd):
         # cmd needs to handle node binding internally or be passed pre-bound
         f = tk.Frame(parent, bg=parent.cget('bg')); f.pack(fill='x', pady=2)
+<<<<<<< HEAD
         tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(side='left', padx=(0,5))
         cb = ttk.Combobox(f, values=values, state='readonly', font=('Microsoft YaHei', int(9 * SCALE_FACTOR))); cb.set(val); cb.pack(fill='x', pady=2, expand=True); cb.bind("<<ComboboxSelected>>", cmd)
         
     def _btn(self, parent, txt, cmd, bg=None): return tk.Button(parent, text=txt, command=cmd, bg=bg or COLORS['btn_bg'], fg='white', bd=0, activebackground=COLORS['btn_hover'], relief='flat', pady=2, font=('Microsoft YaHei', int(8 * SCALE_FACTOR))).pack(fill='x', pady=3, ipady=1) or parent.winfo_children()[-1]
+=======
+        tk.Label(f, text=label, bg=parent.cget('bg'), fg=COLORS['fg_text'], font=FONTS['small']).pack(side='left', padx=(0,5))
+        cb = ttk.Combobox(f, values=values, state='readonly', font=FONTS['code']); cb.set(val); cb.pack(fill='x', pady=2, expand=True); cb.bind("<<ComboboxSelected>>", cmd)
+    def _btn(self, parent, txt, cmd, bg=None): return tk.Button(parent, text=txt, command=cmd, bg=bg or COLORS['btn_bg'], fg='white', bd=0, activebackground=COLORS['btn_hover'], relief='flat', pady=2, font=FONTS['small']).pack(fill='x', pady=3, ipady=1) or parent.winfo_children()[-1]
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
     def _btn_icon(self, parent, txt, cmd, bg=None, color=None, width=None): tk.Button(parent, text=txt, command=cmd, bg=bg or COLORS['bg_card'], fg=color or 'white', bd=0, activebackground=COLORS['btn_hover'], relief='flat', width=width).pack(side='right', padx=2)
     
     def _chk(self, parent, txt, key, val):
         target_node = self.current_node
         var = tk.BooleanVar(value=val)
+<<<<<<< HEAD
         tk.Checkbutton(parent, text=txt, variable=var, bg=parent.cget('bg'), fg='white', selectcolor=COLORS['bg_app'], activebackground=parent.cget('bg'), borderwidth=0, highlightthickness=0, command=lambda: [self._save(key, var.get(), target_node), self.load_node(self.current_node)]).pack(anchor='w', pady=2)
     
     def _save(self, key, val, node=None):
@@ -1734,6 +1853,11 @@ class PropertyPanel(tk.Frame):
                 target.update_data(key, val)
             except Exception as e:
                 self.app.log(f"⚠️ 保存数据失败: {e}", "warning")
+=======
+        tk.Checkbutton(parent, text=txt, variable=var, bg=parent.cget('bg'), fg='white', selectcolor=COLORS['bg_app'], activebackground=parent.cget('bg'), borderwidth=0, highlightthickness=0, command=lambda: [self._save(key, var.get()), self.load_node(self.current_node)]).pack(anchor='w', pady=2)
+    def _save(self, key, val): 
+        if self.current_node: self.current_node.update_data(key, val)
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
 
     def _draw_image_preview(self, parent, data):
         c = tk.Canvas(parent, width=240, height=135, bg='black', highlightthickness=0); c.pack(pady=5)
@@ -2016,6 +2140,7 @@ class App(tk.Tk):
                 self.property_panel.current_node.update_data('y', abs_y)
                 self.property_panel.load_node(self.property_panel.current_node)
         c.bind("<Button-1>",clk)
+<<<<<<< HEAD
     
     def pick_start_coordinate(self): 
         self.iconify(); self.log("🎯 请选择拖拽起始坐标", "info"); self.after(500, lambda: self._start_coord_overlay())
@@ -2046,6 +2171,8 @@ class App(tk.Tk):
                 self.property_panel.load_node(self.property_panel.current_node)
                 self.log(f"✅ 目标坐标已设置: ({abs_x}, {abs_y})", "success")
         c.bind("<Button-1>",clk)
+=======
+>>>>>>> parent of 0908735 (update 1.6.3 fix font display error)
 
     # 快捷键与运行控制
     def refresh_hotkeys(self):
